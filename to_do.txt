@@ -1,0 +1,3 @@
+- Create functions that will be trading strategies
+- Add ability to pull stock data
+- Add ability to pull sets of stock data based on conditions
