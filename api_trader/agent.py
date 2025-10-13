@@ -28,7 +28,7 @@ class Agent:
     def set_symbols(self, symbols: list) -> None:
         self.symbols.update(symbols)
 
-    def _get_data(self, start: datetime, end: datetime) -> pandas.DataFrame:
+    def _get_trades(self, start: datetime, end: datetime) -> pandas.DataFrame:
         request_params = StockTradesRequest(
             symbol_or_symbols=list(self.symbols),
             start=start,
@@ -59,7 +59,7 @@ class Agent:
         return stock_table
 
 
-    def get_data(self, measure: str, amount: int, end_date: datetime=datetime.now()) -> pandas.DataFrame:
+    def get_trades(self, measure: str, amount: int, end_date: datetime=datetime.now()) -> pandas.DataFrame:
         start_date = end_date
         match measure:
             case "minutes":
@@ -69,12 +69,12 @@ class Agent:
             case "days":
                 start_date -= timedelta(days=amount)
 
-        return self._get_data(start_date, end_date)
+        return self._get_trades(start_date, end_date)
 
 
 
 if __name__ == "__main__":
     agent = Agent()
     agent.set_symbols(['AAPL', "TSLA"])
-    data = agent.get_data("days", 2, end_date=datetime.now()-timedelta(days=3))
+    data = agent.get_trades("minutes", 2, end_date=datetime.now()-timedelta(days=5))
     print(data)
