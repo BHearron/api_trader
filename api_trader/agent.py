@@ -1,6 +1,5 @@
 # Standard library imports
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 # Third party imports
 import pandas
@@ -8,6 +7,8 @@ from dotenv import dotenv_values
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockTradesRequest, StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from alpaca.data.models.bars import BarSet
+from matplotlib import pyplot as plt
 
 # Default values
 DEFAULT_ENV_FILE = ".env"
@@ -76,29 +77,67 @@ class Agent:
     def _get_data(
             self, symbols: list[str], timeframe: TimeFrame, 
             start_date: datetime=None, end_date: datetime=datetime.now()
-        ) -> pandas.DataFrame:
+        ) -> BarSet:
         request = StockBarsRequest(
             symbol_or_symbols=symbols,
             timeframe=timeframe,
             start=start_date,
             end=end_date
         )
-        bars_data = self.historical_client.get_stock_bars(request)
-        print(bars_data)
+        data = self.historical_client.get_stock_bars(request)
+        return data
+
+    def get_data(
+            self, symbols: list[str], timeframe: TimeFrame=TimeFrame(1, TimeFrameUnit.Minute), 
+            start_date: datetime=None, end_date: datetime=datetime.now()
+        ) -> pandas.DataFrame:
+        data = self._get_data(symbols, timeframe, start_date, end_date)
+        
+        dataframe = {
+            "symbol": [],
+            "timestamp": [],
+            "open": [],
+            "close": [],
+            "volume": [],
+            "trades": [],
+        }
+        for symbol in symbols:
+            symbol_data = data[symbol]
+            for d in symbol_data:
+                dataframe["symbol"].append(d.symbol)
+                dataframe["timestamp"].append(d.timestamp)
+                dataframe["open"].append(d.open)
+                dataframe["close"].append(d.close)
+                dataframe["volume"].append(d.volume)
+                dataframe["trades"].append(d.trade_count)
+        return pandas.DataFrame(dataframe)
+    
+    
+    def test_strategy(self, data: pandas.DataFrame):
+        money = 100
+
+        # Ensure the table is sorted by timestamp
+        # Iterate through each row on the table
+        # If choose to buy, then subtract
+        # If choose to sell then add 
+        # Maybe add a toggle to switch from open/close for buy and sell?
+
+        # Make a table with known trades. Essentially move the row from the starting
+        # data table to a new table after iterated over. Can be used for strategy
 
 
 
 if __name__ == "__main__":
     # Set parameters for testing
-    symbols = ['AAPL', "TSLA"]
+    symbols = ['AAPL']
     start_date = "2025-10-15 10:00AM"
     start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M%p")
-    
-    agent = Agent()
-    agent.set_symbols(symbols)  # depricated
+    end_date = start_date + timedelta(minutes=5)
 
-    agent._get_data(
+    # Test Agent
+    agent = Agent()
+    agent.get_data(
         symbols = symbols, 
-        timeframe = TimeFrame(5, TimeFrameUnit.Minute),
-        start_date = start_date
+        start_date = start_date,
+        end_date = end_date
     )
