@@ -6,7 +6,8 @@ from datetime import timedelta
 import pandas
 from dotenv import dotenv_values
 from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockTradesRequest
+from alpaca.data.requests import StockTradesRequest, StockBarsRequest
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
 # Default values
 DEFAULT_ENV_FILE = ".env"
@@ -32,7 +33,8 @@ class Agent:
         request_params = StockTradesRequest(
             symbol_or_symbols=list(self.symbols),
             start=start,
-            end=end
+            end=end,
+            timeframe=TimeFrame.Minute
         )
         trades = self.historical_client.get_stock_trades(request_params)
         
@@ -58,7 +60,6 @@ class Agent:
 
         return stock_table
 
-
     def get_trades(self, measure: str, amount: int, end_date: datetime=datetime.now()) -> pandas.DataFrame:
         start_date = end_date
         match measure:
@@ -70,11 +71,34 @@ class Agent:
                 start_date -= timedelta(days=amount)
 
         return self._get_trades(start_date, end_date)
+    
+
+    def _get_data(
+            self, symbols: list[str], timeframe: TimeFrame, 
+            start_date: datetime=None, end_date: datetime=datetime.now()
+        ) -> pandas.DataFrame:
+        request = StockBarsRequest(
+            symbol_or_symbols=symbols,
+            timeframe=timeframe,
+            start=start_date,
+            end=end_date
+        )
+        bars_data = self.historical_client.get_stock_bars(request)
+        print(bars_data)
 
 
 
 if __name__ == "__main__":
+    # Set parameters for testing
+    symbols = ['AAPL', "TSLA"]
+    start_date = "2025-10-15 10:00AM"
+    start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M%p")
+    
     agent = Agent()
-    agent.set_symbols(['AAPL', "TSLA"])
-    data = agent.get_trades("minutes", 2, end_date=datetime.now()-timedelta(days=5))
-    print(data)
+    agent.set_symbols(symbols)  # depricated
+
+    agent._get_data(
+        symbols = symbols, 
+        timeframe = TimeFrame(5, TimeFrameUnit.Minute),
+        start_date = start_date
+    )
